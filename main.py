@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BOT_VERSION = "1.0.2-logs-only-no-ems"
+BOT_VERSION = "1.0.3-ignore-position-move"
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN", "").strip()
 GUILD_ID = int(os.getenv("GUILD_ID", "1505903653079351357"))
@@ -1043,7 +1043,6 @@ def role_diff(before: discord.Role, after: discord.Role) -> List[Tuple[str, str,
         ("Culoare", str(before.color), str(after.color)),
         ("Afișat separat", bool_ro(before.hoist), bool_ro(after.hoist)),
         ("Menționabil", bool_ro(before.mentionable), bool_ro(after.mentionable)),
-        ("Poziție", str(before.position), str(after.position)),
     ]
     for label, old, new in checks:
         if old != new:
@@ -1096,7 +1095,6 @@ def channel_diff(before: discord.abc.GuildChannel, after: discord.abc.GuildChann
     fields: List[Tuple[str, str, bool]] = []
     attrs = [
         ("Nume", "name"),
-        ("Poziție", "position"),
         ("Categorie", "category"),
         ("Topic", "topic"),
         ("Slowmode", "slowmode_delay"),
