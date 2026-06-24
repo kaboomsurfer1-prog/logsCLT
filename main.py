@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BOT_VERSION = "1.0.3-ignore-position-move"
+BOT_VERSION = "1.0.4-ignore-position-move-strict"
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN", "").strip()
 GUILD_ID = int(os.getenv("GUILD_ID", "1505903653079351357"))
@@ -1075,9 +1075,22 @@ async def on_guild_role_delete(role: discord.Role) -> None:
     await send_log("🗑️ Rol șters", "Un rol a fost șters.", color=color_red(), fields=[("Rol", f"`{role.name}` • `{role.id}`", True), ("Executor", user_line(executor), True), ("Motiv audit", reason or "—", False)])
 
 
+def is_only_role_position_change(before: discord.Role, after: discord.Role) -> bool:
+    return (
+        before.position != after.position
+        and before.name == after.name
+        and before.color == after.color
+        and before.hoist == after.hoist
+        and before.mentionable == after.mentionable
+        and before.permissions.value == after.permissions.value
+    )
+
+
 @bot.event
 async def on_guild_role_update(before: discord.Role, after: discord.Role) -> None:
     if after.guild.id != GUILD_ID:
+        return
+    if is_only_role_position_change(before, after):
         return
     fields = role_diff(before, after)
     if not fields:
@@ -1131,9 +1144,25 @@ async def on_guild_channel_delete(channel: discord.abc.GuildChannel) -> None:
     await send_log("🗑️ Canal șters", "Un canal a fost șters.", color=color_red(), fields=[("Canal", f"`{getattr(channel, 'name', 'necunoscut')}` • `{channel.id}`", True), ("Tip", channel.__class__.__name__, True), ("Executor", user_line(executor), True), ("Motiv audit", reason or "—", False)])
 
 
+def is_only_channel_position_change(before: discord.abc.GuildChannel, after: discord.abc.GuildChannel) -> bool:
+    comparable_attrs = [
+        "name", "category", "topic", "slowmode_delay", "nsfw",
+        "bitrate", "user_limit", "overwrites",
+    ]
+    if getattr(before, "position", None) == getattr(after, "position", None):
+        return False
+    for attr in comparable_attrs:
+        if hasattr(before, attr) and hasattr(after, attr):
+            if getattr(before, attr) != getattr(after, attr):
+                return False
+    return True
+
+
 @bot.event
 async def on_guild_channel_update(before: discord.abc.GuildChannel, after: discord.abc.GuildChannel) -> None:
     if after.guild.id != GUILD_ID:
+        return
+    if is_only_channel_position_change(before, after):
         return
     fields = channel_diff(before, after)
     if not fields:
